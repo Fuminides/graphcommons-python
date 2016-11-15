@@ -41,7 +41,7 @@ class Graph(Entity):
                 return node
 
     def edges_for(self, node, direction):
-        if isinstance(node, basestring):
+        if isinstance(node, str):
             node = self.get_node(node)
 
         return [edge for edge in self.edges
