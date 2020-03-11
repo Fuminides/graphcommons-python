@@ -31,7 +31,7 @@ class Edge(Entity):
         # signal types: create or update
         action = "edge_%s" % action
 
-        from_id, to_id = map(self.get, ('from', 'to'))
+        from_id, to_id = list(map(self.get, ('from', 'to')))
         from_node = graph.get_node(from_id)
         to_node = graph.get_node(to_id)
         kwargs = dict(action=action,
@@ -86,10 +86,10 @@ class NodeType(Entity):
 class Graph(Entity):
     def __init__(self, *args, **kwargs):
         super(Graph, self).__init__(*args, **kwargs)
-        self.edges = map(Edge, self.edges or [])
-        self.nodes = map(Node, self.nodes or [])
-        self.node_types = map(NodeType, self.nodeTypes or [])
-        self.edge_types = map(EdgeType, self.edgeTypes or [])
+        self.edges = list(map(Edge, self.edges or []))
+        self.nodes = list(map(Node, self.nodes or []))
+        self.node_types = list(map(NodeType, self.nodeTypes or []))
+        self.edge_types = list(map(EdgeType, self.edgeTypes or []))
 
         # hash for quick search
         self._edges = dict((edge.id, edge) for edge in self.edges)
@@ -124,7 +124,7 @@ class GraphCommonsException(Exception):
     def __init__(self, status_code, message):
         self.status_code = status_code
 
-        if isinstance(message, unicode):
+        if isinstance(message, str):
             message = message.encode("utf-8")  # Otherwise, it will not be printed.
 
         self.message = message
@@ -180,13 +180,13 @@ class GraphCommons(object):
 
     def new_graph(self, signals=None, **kwargs):
         if signals is not None:
-            kwargs['signals'] = map(dict, signals)
+            kwargs['signals'] = list(map(dict, signals))
         response = self.make_request('post', 'graphs', data=kwargs)
         return Graph(**response.json()['graph'])
 
     def update_graph(self, id, signals=None, **kwargs):
         if signals is not None:
-            kwargs['signals'] = map(dict, signals)
+            kwargs['signals'] = list(map(dict, signals))
         endpoint = 'graphs/%s/add' % id
         response = self.make_request('put', endpoint, data=kwargs)
         return Graph(**response.json()['graph'])
@@ -194,7 +194,7 @@ class GraphCommons(object):
     def clear_graph(self, graph_id):
         graph = self.graphs(graph_id)
         # Remove all nodes. (This also removes all edges.)
-        signals = map(lambda node: dict(action="node_delete", id=node.id), graph.nodes)
+        signals = list(map(lambda node: dict(action="node_delete", id=node.id), graph.nodes))
         endpoint = "graphs/{}/add".format(graph_id)
         kwargs = dict(signals=signals)
         response = self.make_request("put", endpoint, data=kwargs)
@@ -226,11 +226,11 @@ class GraphCommons(object):
         kwargs['subtitle'] = u"{}\n{}".format(subtitle, base_graph.subtitle)
 
         # Get edge_types by using their ids.
-        edge_types = map(base_graph.get_edge_type, set(edge_type_ids))
-        node_types = map(base_graph.get_node_type, set(node_type_ids))
+        edge_types = list(map(base_graph.get_edge_type, set(edge_type_ids)))
+        node_types = list(map(base_graph.get_node_type, set(node_type_ids)))
 
         # Add node and edge type Signals first.
-        signals = map(lambda entity: entity.to_signal('create'), chain(node_types, edge_types))
+        signals = list(map(lambda entity: entity.to_signal('create'), chain(node_types, edge_types)))
 
         edge_ids = set()
         node_ids = set()
@@ -240,7 +240,7 @@ class GraphCommons(object):
         nodes = [n for n in nodes if not (n.id in node_ids or node_ids.add(n.id))]
 
         # Add node and edge Signals.
-        signals.extend(map(lambda entity: entity.to_signal('create', base_graph), chain(edges, nodes)))
+        signals.extend(list(map(lambda entity: entity.to_signal('create', base_graph), chain(edges, nodes))))
         return self.new_graph(signals=signals, **kwargs)
 
     def paths(self, graph_id, kwargs):
@@ -250,8 +250,8 @@ class GraphCommons(object):
         nodes = response['nodes']
         paths = []
         for path in response['paths']:
-            p = {'edges': map(Edge, (edges[edge_id] for edge_id in path['edges'])),
-                 'nodes': map(Node, (nodes[node_id] for node_id in path['nodes'])), 'dirs': path['dirs'],
+            p = {'edges': list(map(Edge, (edges[edge_id] for edge_id in path['edges']))),
+                 'nodes': list(map(Node, (nodes[node_id] for node_id in path['nodes']))), 'dirs': path['dirs'],
                  'path_string': path['path_string']}
             paths.append(Path(**p))
         return paths

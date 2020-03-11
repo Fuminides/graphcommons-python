@@ -4,10 +4,12 @@ More detailed API documentation:
 
 <http://graphcommons.github.io/api-v1/>
 
+IMPORTANT: this fork actually works with python 3.5+!
+
 ### Installation
 
 ```
-pip install graphcommons
+Use the seupt.py in this repository.
 ```
 
 ### Usage
